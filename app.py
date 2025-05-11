@@ -188,7 +188,8 @@ if not st.session_state.logged_in:
                 st.session_state.auth_mode = "login"
                 st.experimental_rerun()
             else:
-                st.error(f"Registration failed: {result.get('msg', 'Unknown error')}")
+                st.error(f"Registration failed: {result}")
+
         st.button("Back to Login", on_click=lambda: st.session_state.update(auth_mode="login"))
         st.stop()
 
