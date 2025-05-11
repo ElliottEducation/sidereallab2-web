@@ -44,3 +44,21 @@ def get_user_role(user_id):
         return data[0]["role"]
     else:
         return "lite"  # 默认角色
+
+
+def add_user_role(user_id, role="lite"):
+    """向 user_roles 表插入新用户的权限记录"""
+    url = f"{SUPABASE_URL}/rest/v1/user_roles"
+    data = {
+        "user_id": user_id,
+        "role": role
+    }
+    headers = {
+        "apikey": SUPABASE_KEY,
+        "Authorization": f"Bearer {SUPABASE_KEY}",
+        "Content-Type": "application/json",
+        "Prefer": "return=representation"
+    }
+    r = requests.post(url, json=data, headers=headers)
+    return r.status_code == 201
+
