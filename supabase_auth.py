@@ -23,9 +23,10 @@ def sign_in(email, password):
             "email": email,
             "password": password
         })
+        print("SIGN IN RESULT:", result)
         return result.user
     except Exception as e:
-        print("Login error:", e)
+        print("SIGN IN ERROR:", e)
         return None
 
 def add_user_role(user_id, role="lite"):
