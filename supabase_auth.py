@@ -1,62 +1,48 @@
-import requests
+from supabase import create_client
 
-# Supabase 项目连接信息（Elliott 专属）
+# Replace with your actual Supabase credentials
 SUPABASE_URL = "https://zhlhqutkuvoxlxiiulrj.supabase.co"
-SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpobGhxdXRrdXZveGx4aWl1bHJqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY5MzEwNTQsImV4cCI6MjA2MjUwNzA1NH0.6IMR_vD9rYr3IAwsdfCznxlu5I2ATtIAqSJvZ_3TO3s"
+SUPABASE_KEY = "YOUR_SUPABASE_ANON_KEY"
+
+supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 def sign_up(email, password):
-    """注册新用户（可选扩展）"""
-    url = f"{SUPABASE_URL}/auth/v1/signup"
-    data = {"email": email, "password": password}
-    headers = {
-        "apikey": SUPABASE_KEY,
-        "Content-Type": "application/json"
-    }
-    r = requests.post(url, json=data, headers=headers)
-    return r.json()
-
-def sign_in(email, password):
-    """用户登录，返回包含 user ID 的 token 对象"""
-    url = f"{SUPABASE_URL}/auth/v1/token?grant_type=password"
-    data = {"email": email, "password": password}
-    headers = {
-        "apikey": SUPABASE_KEY,
-        "Content-Type": "application/json"
-    }
-    r = requests.post(url, json=data, headers=headers)
-    if r.status_code == 200:
-        return r.json()
-    else:
+    try:
+        result = supabase.auth.sign_up({
+            "email": email,
+            "password": password
+        })
+        return result.user
+    except Exception as e:
+        print("Sign-up error:", e)
         return None
 
-def get_user_role(user_id):
-    from supabase import create_client
-    SUPABASE_URL = "https://zhlhqutkuvoxlxiiulrj.supabase.co"  # 替换为你的实际 URL
-    SUPABASE_KEY = "你的 anon key"  # 替换为你的 Supabase public API key
-
-    supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
-    response = supabase.table("user_roles").select("*").eq("user_id", user_id).execute()
-    data = response.data
-    if data and len(data) > 0 and "role" in data[0]:
-        return data[0]["role"]
-    return "lite"
-
-
-
+def sign_in(email, password):
+    try:
+        result = supabase.auth.sign_in_with_password({
+            "email": email,
+            "password": password
+        })
+        return result.user
+    except Exception as e:
+        print("Login error:", e)
+        return None
 
 def add_user_role(user_id, role="lite"):
-    """向 user_roles 表插入新用户的权限记录"""
-    url = f"{SUPABASE_URL}/rest/v1/user_roles"
-    data = {
-        "user_id": user_id,
-        "role": role
-    }
-    headers = {
-        "apikey": SUPABASE_KEY,
-        "Authorization": f"Bearer {SUPABASE_KEY}",
-        "Content-Type": "application/json",
-        "Prefer": "return=representation"
-    }
-    r = requests.post(url, json=data, headers=headers)
-    return r.status_code == 201
+    try:
+        supabase.table("user_roles").insert({
+            "user_id": user_id,
+            "role": role
+        }).execute()
+    except Exception as e:
+        print("Insert role error:", e)
 
+def get_user_role(user_id):
+    try:
+        response = supabase.table("user_roles").select("*").eq("user_id", user_id).execute()
+        data = response.data
+        if data and len(data) > 0 and "role" in data[0]:
+            return data[0]["role"]
+    except Exception as e:
+        print("Role query error:", e)
+    return "lite"
