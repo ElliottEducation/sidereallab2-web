@@ -97,14 +97,14 @@ def plot_polar_velocity_distribution(omega):
     return fig
 
 # -------------------------
-# Chart Download Buttons
+# Download Buttons
 # -------------------------
 def download_image(file, label):
     with open(file, "rb") as f:
         st.download_button(label, f, file_name=file, mime="image/png")
 
 # -------------------------
-# CSV Export Functions
+# CSV Export
 # -------------------------
 def generate_csv(data_dict):
     df = pd.DataFrame([data_dict])
@@ -115,7 +115,7 @@ def download_csv():
         st.download_button("Download Results as CSV", f, "sidereallab_output.csv", "text/csv")
 
 # -------------------------
-# PDF Export Function
+# PDF Export
 # -------------------------
 def generate_pdf_report(data_dict, chart_path="speed_vs_latitude.png", output_path="sidereallab_report.pdf"):
     c = canvas.Canvas(output_path, pagesize=A4)
@@ -146,7 +146,7 @@ def generate_pdf_report(data_dict, chart_path="speed_vs_latitude.png", output_pa
 
 
 # -------------------------
-# Login / Register Switching
+# Login / Register UI
 # -------------------------
 st.set_page_config(page_title="SiderealLab Pro", layout="centered")
 st.title("🌍 SiderealLab Pro – Secure App")
@@ -184,16 +184,15 @@ if not st.session_state.logged_in:
             if isinstance(result, dict) and "id" in result:
                 user_id = result["id"]
                 add_user_role(user_id)
-                st.success("Registration successful! Please log in.")
+                st.success("✅ Registration successful! You can now log in.")
                 st.session_state.auth_mode = "login"
-                st.experimental_rerun()
             else:
                 st.error(f"Registration may have failed: {result}")
         st.button("Back to Login", on_click=lambda: st.session_state.update(auth_mode="login"))
         st.stop()
 
 # -------------------------
-# Main Application UI
+# Main Form & Calculation UI
 # -------------------------
 role = st.session_state.role
 st.success(f"Welcome, {st.session_state.email} (Role: {role.upper()})")
@@ -225,7 +224,6 @@ if submitted:
         st.write(f"**Angular Velocity:** {omega:.6f} rad/hr")
         st.write(f"**Speed:** {speed_kmh:.2f} km/h | {speed_ms:.2f} m/s")
 
-        # CSV + PDF Export
         data_dict = {
             "Target": target,
             "Latitude": lat,
@@ -239,13 +237,13 @@ if submitted:
             "Speed (km/h)": speed_kmh,
             "Speed (m/s)": speed_ms
         }
+
         generate_csv(data_dict)
         download_csv()
         generate_pdf_report(data_dict)
         with open("sidereallab_report.pdf", "rb") as f:
             st.download_button("Download PDF Report", f, "sidereallab_report.pdf", "application/pdf")
 
-        # Charts
         st.markdown("### 📈 Charts")
         st.subheader("1. Speed vs Latitude")
         st.pyplot(plot_speed_vs_latitude(omega, radius))
@@ -269,7 +267,7 @@ if submitted:
             download_image("polar_velocity.png", "Download Polar Velocity Image")
 
         if role == "lite":
-            st.info("Upgrade to Pro to download all charts and access full features.")
+            st.info("Upgrade to Pro to unlock all chart downloads and PDF features.")
 
     except Exception as e:
         st.error(f"Error: {e}")
