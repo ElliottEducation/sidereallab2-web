@@ -4,6 +4,9 @@ from datetime import datetime
 import matplotlib.pyplot as plt
 import numpy as np
 
+# -------------------------
+# Core Calculation Functions
+# -------------------------
 def get_local_radius(latitude_deg):
     return 6371.0 * math.cos(math.radians(latitude_deg))
 
@@ -13,6 +16,9 @@ def calculate_angular_velocity(delta_T_hours):
 def calculate_linear_speed(radius_km, angular_velocity, latitude_deg):
     return radius_km * angular_velocity * math.cos(math.radians(latitude_deg))
 
+# -------------------------
+# Graphing Functions
+# -------------------------
 def plot_speed_vs_latitude(omega, radius):
     latitudes = np.linspace(-90, 90, 181)
     speeds = radius * omega * np.cos(np.radians(latitudes))
@@ -24,10 +30,65 @@ def plot_speed_vs_latitude(omega, radius):
     ax.grid(True)
     return fig
 
-st.set_page_config(page_title="SiderealLab Pro", layout="centered")
-st.title("🌍 SiderealLab Pro – Web Estimator")
+def plot_radius_vs_latitude():
+    latitudes = np.linspace(-90, 90, 181)
+    radii = 6371.0 * np.cos(np.radians(latitudes))
+    fig, ax = plt.subplots()
+    ax.plot(latitudes, radii)
+    ax.set_xlabel("Latitude (°)")
+    ax.set_ylabel("Radius (km)")
+    ax.set_title("Earth Radius vs Latitude")
+    ax.grid(True)
+    return fig
 
-# Mock login system
+def plot_speed_comparison(omega, lat):
+    R = 6371
+    radius = R * math.cos(math.radians(lat))
+    speed_local = radius * omega
+    speed_equator = R * omega
+    fig, ax = plt.subplots()
+    ax.bar(["Local", "Equator"], [speed_local, speed_equator], color=["green", "blue"])
+    ax.set_ylabel("Speed (km/h)")
+    ax.set_title("Local vs Equator Speed")
+    return fig
+
+def plot_earth_cross_section(lat, radius):
+    fig, ax = plt.subplots()
+    earth = plt.Circle((0, 0), 6371, fill=False, linestyle="--", label="Earth")
+    local = plt.Circle((0, 0), radius, fill=False, linestyle="-", label="Local Radius")
+    ax.add_patch(earth)
+    ax.add_patch(local)
+    x = radius * np.cos(np.radians(lat))
+    y = radius * np.sin(np.radians(lat))
+    ax.plot([0, x], [0, y], color="red", label=f"Latitude {lat}°")
+    ax.set_aspect('equal')
+    ax.set_xlim(-6500, 6500)
+    ax.set_ylim(-6500, 6500)
+    ax.set_xlabel("km")
+    ax.set_ylabel("km")
+    ax.set_title("Earth Cross Section View")
+    ax.legend()
+    ax.grid(True)
+    return fig
+
+def plot_polar_velocity_distribution(omega):
+    latitudes = np.linspace(-90, 90, 360)
+    radii = 6371.0 * np.cos(np.radians(latitudes))
+    speeds = radii * omega
+    theta = np.radians(latitudes)
+    fig = plt.figure()
+    ax = fig.add_subplot(111, polar=True)
+    ax.plot(theta, speeds)
+    ax.set_title("Polar Velocity Distribution")
+    return fig
+
+# -------------------------
+# Streamlit Web UI
+# -------------------------
+st.set_page_config(page_title="SiderealLab Pro", layout="centered")
+st.title("🌍 SiderealLab Pro – Web Version with Login and Charts")
+
+# Sidebar Login
 with st.sidebar:
     st.header("User Login")
     username = st.text_input("Username", value="guest")
@@ -39,13 +100,24 @@ if login_btn:
     st.session_state["username"] = username
 
 if "logged_in" not in st.session_state or not st.session_state["logged_in"]:
-    st.warning("Please login from the sidebar to begin.")
+    st.warning("Please login to continue.")
     st.stop()
 
-st.success(f"Welcome, {st.session_state['username']}!")
+# -------------------------
+# User level control
+# -------------------------
+if username.lower() in ["elliott", "admin"]:
+    user_level = "pro"
+else:
+    user_level = "lite"
 
+st.success(f"Welcome, {username} (User Level: {user_level.upper()})")
+
+# -------------------------
+# Main Input Form
+# -------------------------
 with st.form("input_form"):
-    target = st.text_input("Target name", "Sirius")
+    target = st.text_input("Target Name", "Sirius")
     lat = st.number_input("Latitude (°)", value=-33.86, step=0.01)
     T1_str = st.text_input("Observation T1", "2025-05-01 22:00:00")
     T2_str = st.text_input("Observation T2", "2025-05-02 22:00:00")
@@ -66,11 +138,30 @@ if submitted:
         speed_kmh = calculate_linear_speed(radius, omega, lat)
         speed_ms = speed_kmh * 1000 / 3600
 
-        st.write(f"**Local radius**: {radius:.2f} km")
-        st.write(f"**Angular velocity**: {omega:.6f} rad/hr")
-        st.write(f"**Speed**: {speed_kmh:.2f} km/h  |  {speed_ms:.2f} m/s")
+        st.markdown("### 📊 Computation Results")
+        st.write(f"**Local Radius:** {radius:.2f} km")
+        st.write(f"**Angular Velocity:** {omega:.6f} rad/hr")
+        st.write(f"**Speed:** {speed_kmh:.2f} km/h  |  {speed_ms:.2f} m/s")
 
+        # -------------------------
+        # Chart Display (Based on user level)
+        # -------------------------
+        st.markdown("### 📈 Charts")
+
+        st.subheader("1. Speed vs Latitude")
         st.pyplot(plot_speed_vs_latitude(omega, radius))
+
+        if user_level == "pro":
+            if st.checkbox("2. Radius vs Latitude"):
+                st.pyplot(plot_radius_vs_latitude())
+            if st.checkbox("3. Local vs Equator Speed Comparison"):
+                st.pyplot(plot_speed_comparison(omega, lat))
+            if st.checkbox("4. Earth Cross Section View"):
+                st.pyplot(plot_earth_cross_section(lat, radius))
+            if st.checkbox("5. Polar Velocity Distribution"):
+                st.pyplot(plot_polar_velocity_distribution(omega))
+        else:
+            st.info("Upgrade to Pro to unlock 4 additional charts.")
 
     except Exception as e:
         st.error(f"Error: {e}")
