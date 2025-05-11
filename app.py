@@ -3,6 +3,7 @@ import streamlit as st
 from datetime import datetime
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 from supabase_auth import sign_in, sign_up, get_user_role, add_user_role
 
 # -------------------------
@@ -58,7 +59,7 @@ def download_radius_plot():
         st.download_button("Download Radius vs Latitude Image", f, "radius_vs_latitude.png", "image/png")
 
 # -------------------------
-# Chart 3 – Local vs Equator Speed
+# Chart 3 – Speed Comparison
 # -------------------------
 def plot_speed_comparison(omega, lat):
     R = 6371
@@ -127,10 +128,28 @@ def download_polar_velocity_plot():
         st.download_button("Download Polar Velocity Image", f, "polar_velocity.png", "image/png")
 
 # -------------------------
-# Login / Register Switching Interface
+# CSV Export Functions
+# -------------------------
+def generate_csv(data_dict):
+    df = pd.DataFrame([data_dict])
+    df.to_csv("sidereallab_output.csv", index=False)
+
+def download_csv():
+    with open("sidereallab_output.csv", "rb") as f:
+        st.download_button(
+            label="Download Results as CSV",
+            data=f,
+            file_name="sidereallab_output.csv",
+            mime="text/csv"
+        )
+
+
+
+# -------------------------
+# Streamlit Login UI
 # -------------------------
 st.set_page_config(page_title="SiderealLab Pro", layout="centered")
-st.title("🌍 SiderealLab Pro – Secure Login Portal")
+st.title("🌍 SiderealLab Pro – Authenticated App")
 
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
@@ -174,7 +193,7 @@ if not st.session_state.logged_in:
         st.stop()
 
 # -------------------------
-# Main UI after login
+# Main Calculation UI
 # -------------------------
 role = st.session_state.role
 st.success(f"Welcome, {st.session_state.email} (Role: {role.upper()})")
@@ -206,6 +225,23 @@ if submitted:
         st.write(f"**Angular Velocity:** {omega:.6f} rad/hr")
         st.write(f"**Speed:** {speed_kmh:.2f} km/h | {speed_ms:.2f} m/s")
 
+        # Prepare CSV export
+        data_dict = {
+            "Target": target,
+            "Latitude": lat,
+            "Local Radius (km)": radius,
+            "Expected Radius (km)": radius,
+            "Observation T1": T1_str,
+            "Observation T2": T2_str,
+            "Delta T (hrs)": delta_hr,
+            "Delta T (secs)": delta_sec,
+            "Angular Velocity (rad/hr)": omega,
+            "Speed (km/h)": speed_kmh,
+            "Speed (m/s)": speed_ms
+        }
+        generate_csv(data_dict)
+        download_csv()
+
         st.markdown("### 📈 Charts")
         st.subheader("1. Speed vs Latitude")
         st.pyplot(plot_speed_vs_latitude(omega, radius))
@@ -229,8 +265,9 @@ if submitted:
             download_polar_velocity_plot()
 
         if role == "lite":
-            st.info("Upgrade to Pro to download all charts.")
+            st.info("Upgrade to Pro to download charts.")
 
     except Exception as e:
         st.error(f"Error: {e}")
+
 
