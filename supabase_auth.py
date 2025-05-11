@@ -30,11 +30,17 @@ def sign_in(email, password):
         return None
 
 def get_user_role(user_id):
+    from supabase import create_client
+    SUPABASE_URL = "https://zhlhqutkuvoxlxiiulrj.supabase.co"  # 替换为你的实际 URL
+    SUPABASE_KEY = "你的 anon key"  # 替换为你的 Supabase public API key
+
+    supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
     response = supabase.table("user_roles").select("*").eq("user_id", user_id).execute()
     data = response.data
     if data and len(data) > 0 and "role" in data[0]:
         return data[0]["role"]
-    return "lite"  # fallback role
+    return "lite"
+
 
 
 
