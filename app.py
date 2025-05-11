@@ -164,7 +164,9 @@ if not st.session_state.logged_in:
                 st.success(f"Login successful! Role: {st.session_state.role.upper()}")
                 st.experimental_rerun()
             else:
-                st.error("Login failed.")
+                st.error("Login failed. Please check email or password.")
+                st.info(f"Debug info: auth = {auth}")
+
         st.button("Create new account", on_click=lambda: st.session_state.update(auth_mode="register"))
         st.stop()
 
