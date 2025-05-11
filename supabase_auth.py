@@ -2,7 +2,7 @@ from supabase import create_client
 
 # Replace with your actual Supabase credentials
 SUPABASE_URL = "https://zhlhqutkuvoxlxiiulrj.supabase.co"
-SUPABASE_KEY = "YOUR_SUPABASE_ANON_KEY"
+SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpobGhxdXRrdXZveGx4aWl1bHJqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY5MzEwNTQsImV4cCI6MjA2MjUwNzA1NH0.6IMR_vD9rYr3IAwsdfCznxlu5I2ATtIAqSJvZ_3TO3s"
 
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
