@@ -97,15 +97,12 @@ def plot_polar_velocity_distribution(omega):
     return fig
 
 # -------------------------
-# Download Buttons
+# File Export Functions
 # -------------------------
 def download_image(file, label):
     with open(file, "rb") as f:
         st.download_button(label, f, file_name=file, mime="image/png")
 
-# -------------------------
-# CSV Export
-# -------------------------
 def generate_csv(data_dict):
     df = pd.DataFrame([data_dict])
     df.to_csv("sidereallab_output.csv", index=False)
@@ -114,9 +111,6 @@ def download_csv():
     with open("sidereallab_output.csv", "rb") as f:
         st.download_button("Download Results as CSV", f, "sidereallab_output.csv", "text/csv")
 
-# -------------------------
-# PDF Export
-# -------------------------
 def generate_pdf_report(data_dict, chart_path="speed_vs_latitude.png", output_path="sidereallab_report.pdf"):
     c = canvas.Canvas(output_path, pagesize=A4)
     width, height = A4
@@ -144,7 +138,6 @@ def generate_pdf_report(data_dict, chart_path="speed_vs_latitude.png", output_pa
     c.save()
     return output_path
 
-
 # -------------------------
 # Login / Register UI
 # -------------------------
@@ -166,12 +159,12 @@ if not st.session_state.logged_in:
             if auth:
                 st.session_state.logged_in = True
                 st.session_state.email = email
-                st.session_state.user_id = auth["user"]["id"]
-                st.session_state.role = get_user_role(st.session_state.user_id)
+                st.session_state.user_id = auth.id
+                st.session_state.role = get_user_role(auth.id)
                 st.success(f"Login successful! Role: {st.session_state.role.upper()}")
                 st.experimental_rerun()
             else:
-                st.error(f"Login failed: {auth}")
+                st.error("Login failed.")
         st.button("Create new account", on_click=lambda: st.session_state.update(auth_mode="register"))
         st.stop()
 
@@ -181,8 +174,8 @@ if not st.session_state.logged_in:
         new_password = st.text_input("New Password", type="password")
         if st.button("Register"):
             result = sign_up(new_email, new_password)
-            if isinstance(result, dict) and "id" in result:
-                user_id = result["id"]
+            if result is not None and hasattr(result, "id"):
+                user_id = result.id
                 add_user_role(user_id)
                 st.success("✅ Registration successful! You can now log in.")
                 st.session_state.auth_mode = "login"
@@ -192,7 +185,7 @@ if not st.session_state.logged_in:
         st.stop()
 
 # -------------------------
-# Main Form & Calculation UI
+# Main UI – Input Form & Output
 # -------------------------
 role = st.session_state.role
 st.success(f"Welcome, {st.session_state.email} (Role: {role.upper()})")
@@ -267,7 +260,7 @@ if submitted:
             download_image("polar_velocity.png", "Download Polar Velocity Image")
 
         if role == "lite":
-            st.info("Upgrade to Pro to unlock all chart downloads and PDF features.")
+            st.info("Upgrade to Pro to unlock all chart downloads and advanced reports.")
 
     except Exception as e:
         st.error(f"Error: {e}")
