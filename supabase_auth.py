@@ -30,20 +30,12 @@ def sign_in(email, password):
         return None
 
 def get_user_role(user_id):
-    """查询 user_roles 表，返回该用户权限：lite 或 pro"""
-    url = f"{SUPABASE_URL}/rest/v1/user_roles?user_id=eq.{user_id}"
-    headers = {
-        "apikey": SUPABASE_KEY,
-        "Authorization": f"Bearer {SUPABASE_KEY}",
-        "Content-Type": "application/json",
-        "Prefer": "return=minimal"
-    }
-    r = requests.get(url, headers=headers)
-    data = r.json()
-    if data:
+    response = supabase.table("user_roles").select("*").eq("user_id", user_id).execute()
+    data = response.data
+    if data and len(data) > 0 and "role" in data[0]:
         return data[0]["role"]
-    else:
-        return "lite"  # 默认角色
+    return "lite"  # fallback role
+
 
 
 def add_user_role(user_id, role="lite"):
