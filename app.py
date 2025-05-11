@@ -3,6 +3,7 @@ import streamlit as st
 from datetime import datetime
 import matplotlib.pyplot as plt
 import numpy as np
+from supabase_auth import sign_in, get_user_role
 
 # -------------------------
 # Core Calculation Functions
@@ -86,36 +87,39 @@ def plot_polar_velocity_distribution(omega):
 # Streamlit Web UI
 # -------------------------
 st.set_page_config(page_title="SiderealLab Pro", layout="centered")
-st.title("🌍 SiderealLab Pro – Web Version with Login and Charts")
+st.title("🌍 SiderealLab Pro – Secure Web Login")
 
-# Sidebar Login
-with st.sidebar:
-    st.header("User Login")
-    username = st.text_input("Username", value="guest")
+# -------------------------
+# Login UI
+# -------------------------
+if "logged_in" not in st.session_state:
+    st.session_state.logged_in = False
+
+if not st.session_state.logged_in:
+    st.subheader("🔐 Login with your account")
+    email = st.text_input("Email")
     password = st.text_input("Password", type="password")
-    login_btn = st.button("Login")
-
-if login_btn:
-    st.session_state["logged_in"] = True
-    st.session_state["username"] = username
-
-if "logged_in" not in st.session_state or not st.session_state["logged_in"]:
-    st.warning("Please login to continue.")
+    if st.button("Login"):
+        auth = sign_in(email, password)
+        if auth:
+            st.session_state.logged_in = True
+            st.session_state.email = email
+            st.session_state.user_id = auth["user"]["id"]
+            st.session_state.role = get_user_role(st.session_state.user_id)
+            st.success(f"Login successful! Role: {st.session_state.role.upper()}")
+            st.experimental_rerun()
+        else:
+            st.error("Login failed. Please check your credentials.")
     st.stop()
 
 # -------------------------
-# User level control
+# Main UI
 # -------------------------
-if username.lower() in ["elliott", "admin"]:
-    user_level = "pro"
-else:
-    user_level = "lite"
+role = st.session_state.role
+user_id = st.session_state.user_id
 
-st.success(f"Welcome, {username} (User Level: {user_level.upper()})")
+st.success(f"Welcome, {st.session_state.email} (Role: {role.upper()})")
 
-# -------------------------
-# Main Input Form
-# -------------------------
 with st.form("input_form"):
     target = st.text_input("Target Name", "Sirius")
     lat = st.number_input("Latitude (°)", value=-33.86, step=0.01)
@@ -143,15 +147,11 @@ if submitted:
         st.write(f"**Angular Velocity:** {omega:.6f} rad/hr")
         st.write(f"**Speed:** {speed_kmh:.2f} km/h  |  {speed_ms:.2f} m/s")
 
-        # -------------------------
-        # Chart Display (Based on user level)
-        # -------------------------
         st.markdown("### 📈 Charts")
-
         st.subheader("1. Speed vs Latitude")
         st.pyplot(plot_speed_vs_latitude(omega, radius))
 
-        if user_level == "pro":
+        if role == "pro":
             if st.checkbox("2. Radius vs Latitude"):
                 st.pyplot(plot_radius_vs_latitude())
             if st.checkbox("3. Local vs Equator Speed Comparison"):
@@ -161,7 +161,7 @@ if submitted:
             if st.checkbox("5. Polar Velocity Distribution"):
                 st.pyplot(plot_polar_velocity_distribution(omega))
         else:
-            st.info("Upgrade to Pro to unlock 4 additional charts.")
+            st.info("Upgrade to Pro to unlock 4 more visualizations.")
 
     except Exception as e:
         st.error(f"Error: {e}")
