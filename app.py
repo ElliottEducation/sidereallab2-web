@@ -97,7 +97,7 @@ def plot_polar_velocity_distribution(omega):
     return fig
 
 # -------------------------
-# File Export Functions
+# Export Functions
 # -------------------------
 def download_image(file, label):
     with open(file, "rb") as f:
@@ -139,17 +139,25 @@ def generate_pdf_report(data_dict, chart_path="speed_vs_latitude.png", output_pa
     return output_path
 
 # -------------------------
-# Login / Register UI
+# Streamlit App UI & Page Switching
 # -------------------------
 st.set_page_config(page_title="SiderealLab Pro", layout="centered")
 st.title("🌍 SiderealLab Pro – Secure App")
 
+# -------------------------
+# Session State Setup
+# -------------------------
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
 if "auth_mode" not in st.session_state:
     st.session_state.auth_mode = "login"
+if "page" not in st.session_state:
+    st.session_state.page = "login"
 
-if not st.session_state.logged_in:
+# -------------------------
+# Page: Login or Register
+# -------------------------
+if st.session_state.page == "login":
     if st.session_state.auth_mode == "login":
         st.subheader("🔐 Login")
         email = st.text_input("Email")
@@ -161,12 +169,10 @@ if not st.session_state.logged_in:
                 st.session_state.email = email
                 st.session_state.user_id = auth.id
                 st.session_state.role = get_user_role(auth.id)
+                st.session_state.page = "main"
                 st.success(f"Login successful! Role: {st.session_state.role.upper()}")
-                st.experimental_rerun()
             else:
-                st.error("Login failed. Please check email or password.")
-                st.info(f"Debug info: auth = {auth}")
-
+                st.error("Login failed.")
         st.button("Create new account", on_click=lambda: st.session_state.update(auth_mode="register"))
         st.stop()
 
@@ -187,83 +193,85 @@ if not st.session_state.logged_in:
         st.stop()
 
 # -------------------------
-# Main UI – Input Form & Output
+# Page: Main Functionality
 # -------------------------
-role = st.session_state.role
-st.success(f"Welcome, {st.session_state.email} (Role: {role.upper()})")
+if st.session_state.page == "main":
+    role = st.session_state.role
+    st.success(f"Welcome, {st.session_state.email} (Role: {role.upper()})")
 
-with st.form("input_form"):
-    target = st.text_input("Target Name", "Sirius")
-    lat = st.number_input("Latitude (°)", value=-33.86, step=0.01)
-    T1_str = st.text_input("Observation T1", "2025-05-01 22:00:00")
-    T2_str = st.text_input("Observation T2", "2025-05-02 22:00:00")
-    submitted = st.form_submit_button("Calculate")
+    with st.form("input_form"):
+        target = st.text_input("Target Name", "Sirius")
+        lat = st.number_input("Latitude (°)", value=-33.86, step=0.01)
+        T1_str = st.text_input("Observation T1", "2025-05-01 22:00:00")
+        T2_str = st.text_input("Observation T2", "2025-05-02 22:00:00")
+        submitted = st.form_submit_button("Calculate")
 
-if submitted:
-    try:
-        T1 = datetime.strptime(T1_str, "%Y-%m-%d %H:%M:%S")
-        T2 = datetime.strptime(T2_str, "%Y-%m-%d %H:%M:%S")
-        delta_sec = (T2 - T1).total_seconds()
-        delta_hr = delta_sec / 3600
-        if delta_hr <= 0:
-            st.error("T2 must be later than T1.")
-            st.stop()
+    if submitted:
+        try:
+            T1 = datetime.strptime(T1_str, "%Y-%m-%d %H:%M:%S")
+            T2 = datetime.strptime(T2_str, "%Y-%m-%d %H:%M:%S")
+            delta_sec = (T2 - T1).total_seconds()
+            delta_hr = delta_sec / 3600
+            if delta_hr <= 0:
+                st.error("T2 must be later than T1.")
+                st.stop()
 
-        radius = get_local_radius(lat)
-        omega = calculate_angular_velocity(delta_hr)
-        speed_kmh = calculate_linear_speed(radius, omega, lat)
-        speed_ms = speed_kmh * 1000 / 3600
+            radius = get_local_radius(lat)
+            omega = calculate_angular_velocity(delta_hr)
+            speed_kmh = calculate_linear_speed(radius, omega, lat)
+            speed_ms = speed_kmh * 1000 / 3600
 
-        st.markdown("### 📊 Results")
-        st.write(f"**Local Radius:** {radius:.2f} km")
-        st.write(f"**Angular Velocity:** {omega:.6f} rad/hr")
-        st.write(f"**Speed:** {speed_kmh:.2f} km/h | {speed_ms:.2f} m/s")
+            st.markdown("### 📊 Results")
+            st.write(f"**Local Radius:** {radius:.2f} km")
+            st.write(f"**Angular Velocity:** {omega:.6f} rad/hr")
+            st.write(f"**Speed:** {speed_kmh:.2f} km/h | {speed_ms:.2f} m/s")
 
-        data_dict = {
-            "Target": target,
-            "Latitude": lat,
-            "Local Radius (km)": radius,
-            "Expected Radius (km)": radius,
-            "Observation T1": T1_str,
-            "Observation T2": T2_str,
-            "Delta T (hrs)": delta_hr,
-            "Delta T (secs)": delta_sec,
-            "Angular Velocity (rad/hr)": omega,
-            "Speed (km/h)": speed_kmh,
-            "Speed (m/s)": speed_ms
-        }
+            data_dict = {
+                "Target": target,
+                "Latitude": lat,
+                "Local Radius (km)": radius,
+                "Expected Radius (km)": radius,
+                "Observation T1": T1_str,
+                "Observation T2": T2_str,
+                "Delta T (hrs)": delta_hr,
+                "Delta T (secs)": delta_sec,
+                "Angular Velocity (rad/hr)": omega,
+                "Speed (km/h)": speed_kmh,
+                "Speed (m/s)": speed_ms
+            }
 
-        generate_csv(data_dict)
-        download_csv()
-        generate_pdf_report(data_dict)
-        with open("sidereallab_report.pdf", "rb") as f:
-            st.download_button("Download PDF Report", f, "sidereallab_report.pdf", "application/pdf")
+            generate_csv(data_dict)
+            download_csv()
+            generate_pdf_report(data_dict)
+            with open("sidereallab_report.pdf", "rb") as f:
+                st.download_button("Download PDF Report", f, "sidereallab_report.pdf", "application/pdf")
 
-        st.markdown("### 📈 Charts")
-        st.subheader("1. Speed vs Latitude")
-        st.pyplot(plot_speed_vs_latitude(omega, radius))
-        if role == "pro":
-            download_image("speed_vs_latitude.png", "Download Speed vs Latitude Image")
+            st.markdown("### 📈 Charts")
+            st.subheader("1. Speed vs Latitude")
+            st.pyplot(plot_speed_vs_latitude(omega, radius))
+            if role == "pro":
+                download_image("speed_vs_latitude.png", "Download Speed vs Latitude Image")
 
-        if role == "pro" and st.checkbox("2. Radius vs Latitude"):
-            st.pyplot(plot_radius_vs_latitude())
-            download_image("radius_vs_latitude.png", "Download Radius vs Latitude Image")
+            if role == "pro" and st.checkbox("2. Radius vs Latitude"):
+                st.pyplot(plot_radius_vs_latitude())
+                download_image("radius_vs_latitude.png", "Download Radius vs Latitude Image")
 
-        if role == "pro" and st.checkbox("3. Local vs Equator Speed"):
-            st.pyplot(plot_speed_comparison(omega, lat))
-            download_image("speed_comparison.png", "Download Speed Comparison Image")
+            if role == "pro" and st.checkbox("3. Local vs Equator Speed"):
+                st.pyplot(plot_speed_comparison(omega, lat))
+                download_image("speed_comparison.png", "Download Speed Comparison Image")
 
-        if role == "pro" and st.checkbox("4. Earth Cross Section"):
-            st.pyplot(plot_earth_cross_section(lat, radius))
-            download_image("cross_section.png", "Download Earth Cross Section Image")
+            if role == "pro" and st.checkbox("4. Earth Cross Section"):
+                st.pyplot(plot_earth_cross_section(lat, radius))
+                download_image("cross_section.png", "Download Earth Cross Section Image")
 
-        if role == "pro" and st.checkbox("5. Polar Velocity Distribution"):
-            st.pyplot(plot_polar_velocity_distribution(omega))
-            download_image("polar_velocity.png", "Download Polar Velocity Image")
+            if role == "pro" and st.checkbox("5. Polar Velocity Distribution"):
+                st.pyplot(plot_polar_velocity_distribution(omega))
+                download_image("polar_velocity.png", "Download Polar Velocity Image")
 
-        if role == "lite":
-            st.info("Upgrade to Pro to unlock all chart downloads and advanced reports.")
+            if role == "lite":
+                st.info("Upgrade to Pro to unlock all chart downloads and advanced reports.")
 
-    except Exception as e:
-        st.error(f"Error: {e}")
+        except Exception as e:
+            st.error(f"Error: {e}")
+
 
