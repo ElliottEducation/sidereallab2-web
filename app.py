@@ -1,3 +1,6 @@
+# -------------------------
+# Imports and Setup
+# -------------------------
 import math
 import streamlit as st
 from datetime import datetime
@@ -7,6 +10,19 @@ import pandas as pd
 from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas
 from supabase_auth import sign_in, sign_up, get_user_role, add_user_role
+
+# -------------------------
+# Streamlit App UI & Navigation
+# -------------------------
+st.set_page_config(page_title="SiderealLab Pro", layout="centered")
+
+# 页面导航菜单（只在已登录后可见）
+if st.session_state.get("logged_in", False):
+    page = st.selectbox("📂 Navigate to", ["Home", "Calculator", "Charts", "Report"])
+
+# ✅ 自动跳转逻辑（未登录则强制跳转登录页）
+if "logged_in" not in st.session_state or not st.session_state.logged_in:
+    st.session_state.page = "login"
 
 # -------------------------
 # Calculation Functions
@@ -48,7 +64,6 @@ def plot_speed_vs_latitude(omega, radius, user_lat=None):
     fig.tight_layout()
     fig.savefig("speed_vs_latitude.png")
     return fig
-
 
 def plot_radius_vs_latitude():
     latitudes = np.linspace(-90, 90, 181)
@@ -153,20 +168,179 @@ def generate_pdf_report(data_dict, chart_path="speed_vs_latitude.png", output_pa
     return output_path
 
 # -------------------------
-# Streamlit App UI & Page Switching
+# Page Functions
 # -------------------------
-st.set_page_config(page_title="SiderealLab Pro", layout="centered")
-st.title("🌍 SiderealLab Pro – Secure App")
+def show_home_page():
+    role = st.session_state.get("role", "lite")
+
+    st.markdown("### 👋 Welcome to **SiderealLab**")
+    st.markdown("""
+SiderealLab is a lightweight scientific tool that calculates the Earth's rotational speed at your latitude,  
+based on actual observation intervals. Whether you're an amateur astronomer, educator, or data enthusiast —  
+you're in the right place.
+""")
+
+    if role == "lite":
+        st.info("You're currently using the **Lite version**. Some features are locked. Upgrade to Pro for full access.")
+
+    with st.expander("🆚 Free vs Pro Comparison"):
+        st.markdown("""
+| Feature                          | Free Version | Pro Version |
+|----------------------------------|:------------:|:-----------:|
+| Local speed calculator           | ✅            | ✅           |
+| Annotated chart (your latitude)  | ✅            | ✅           |
+| Speed vs. Latitude plot          | ✅            | ✅           |
+| Earth cross-section diagram      | ❌            | ✅           |
+| Polar velocity distribution      | ❌            | ✅           |
+| Export PDF report                | ❌            | ✅           |
+| Export CSV data                  | ❌            | ✅           |
+| High-resolution chart download   | ❌            | ✅           |
+""")
+
+    if role == "lite":
+        with st.expander("🚀 Unlock the Full Experience"):
+            st.markdown("""
+Upgrade to **SiderealLab Pro** to access all scientific tools and export features:
+
+- Downloadable high-resolution charts (PNG, PDF)  
+- Detailed Earth cross-section & polar velocity maps  
+- Custom observation periods & comparative tools  
+- Personalised data reports for scientific records  
+- Premium feature access for educators & researchers
+""")
+            upgrade_url = "https://your-upgrade-link.com"  # Replace with actual URL
+            col1, col2 = st.columns([2, 1])
+            with col1:
+                st.markdown("**Ready to unlock the stars?**")
+            with col2:
+                st.markdown(f"[💎 Upgrade Now]({upgrade_url})", unsafe_allow_html=True)
+
+    with st.expander("🌏 Why Does Earth's Rotation Speed Matter?"):
+        st.markdown("""
+Every place on Earth is spinning — but not at the same speed.  
+Your latitude determines your velocity through space.
+
+- At the equator: ~1670 km/h  
+- In Sydney: ~1380 km/h  
+- In Reykjavík: ~800 km/h
+
+This tool lets you visualize and calculate your local motion —  
+**You're not standing still. You're moving with the Earth.**
+""")
+
+    st.markdown("### 🧭 Features at a Glance")
+    cols = st.columns(3)
+    features = [
+        ("🌀", "Local Speed Calculation", "Instant speed based on latitude & time"),
+        ("📈", "Latitude Speed Chart", "Visualize how speed varies with latitude"),
+        ("📤", "PDF/CSV Export", "Download reports for research or class"),
+    ]
+    for i, (icon, title, desc) in enumerate(features):
+        with cols[i]:
+            st.markdown(f"{icon} **{title}**  \n{desc}")
+
+    st.markdown("---")
+    st.markdown("📬 Want to receive updates about SiderealLab Pro? Join our [mailing list](https://example.com)!")
+
+
+def show_calculator_page():
+    if "email" not in st.session_state:
+        st.warning("Please login to use the calculator.")
+        return
+
+    role = st.session_state.get("role", "lite")
+    st.subheader("🧮 Local Rotational Speed Calculator")
+
+    with st.form("input_form"):
+        target = st.text_input("Target Name", "Sirius")
+        lat = st.number_input("Latitude (°)", value=-33.86, step=0.01)
+        T1_str = st.text_input("Observation T1", "2025-05-01 22:00:00")
+        T2_str = st.text_input("Observation T2", "2025-05-02 22:00:00")
+        submitted = st.form_submit_button("Calculate")
+
+    if submitted:
+        try:
+            T1 = datetime.strptime(T1_str, "%Y-%m-%d %H:%M:%S")
+            T2 = datetime.strptime(T2_str, "%Y-%m-%d %H:%M:%S")
+            delta_sec = (T2 - T1).total_seconds()
+            delta_hr = delta_sec / 3600
+            if delta_hr <= 0:
+                st.error("T2 must be later than T1.")
+                return
+
+            radius = get_local_radius(lat)
+            omega = calculate_angular_velocity(delta_hr)
+            speed_ms = calculate_linear_speed(radius, omega)
+            speed_kmh = speed_ms * 3600 / 1000
+
+            st.markdown("### 📊 Results")
+            st.write(f"**Local Radius:** {radius:.2f} km")
+            st.write(f"**Angular Velocity:** {omega:.6e} rad/s")
+            st.write(f"**Speed:** {speed_kmh:.2f} km/h | {speed_ms:.2f} m/s")
+
+            data_dict = {
+                "Target": target,
+                "Latitude": lat,
+                "Local Radius (km)": radius,
+                "Observation T1": T1_str,
+                "Observation T2": T2_str,
+                "Delta T (hrs)": delta_hr,
+                "Delta T (secs)": delta_sec,
+                "Angular Velocity (rad/s)": omega,
+                "Speed (km/h)": speed_kmh,
+                "Speed (m/s)": speed_ms
+            }
+
+            generate_csv(data_dict)
+            generate_pdf_report(data_dict)
+            download_csv()
+            with open("sidereallab_report.pdf", "rb") as f:
+                st.download_button("Download PDF Report", f, "sidereallab_report.pdf", "application/pdf")
+
+            st.markdown("### 📈 Charts")
+            st.pyplot(plot_speed_vs_latitude(omega, radius, user_lat=lat))
+
+            if role == "pro":
+                download_image("speed_vs_latitude.png", "Download Speed vs Latitude Image")
+
+                if st.checkbox("Radius vs Latitude"):
+                    st.pyplot(plot_radius_vs_latitude())
+                    download_image("radius_vs_latitude.png", "Download Radius Image")
+
+                if st.checkbox("Equator vs Local Speed"):
+                    st.pyplot(plot_speed_comparison(omega, lat))
+                    download_image("speed_comparison.png", "Download Speed Comparison")
+
+                if st.checkbox("Earth Cross Section"):
+                    st.pyplot(plot_earth_cross_section(lat, radius))
+                    download_image("cross_section.png", "Download Earth Cross Section")
+
+                if st.checkbox("Polar Velocity Distribution"):
+                    st.pyplot(plot_polar_velocity_distribution(omega))
+                    download_image("polar_velocity.png", "Download Polar Velocity")
+
+            else:
+                st.info("Upgrade to Pro to unlock all chart downloads and advanced reports.")
+
+        except Exception as e:
+            st.error(f"Error: {e}")
 
 # -------------------------
-# Session State Setup
+# Page Router (after login)
 # -------------------------
-if "logged_in" not in st.session_state:
-    st.session_state.logged_in = False
-if "auth_mode" not in st.session_state:
-    st.session_state.auth_mode = "login"
-if "page" not in st.session_state:
-    st.session_state.page = "login"
+if st.session_state.page == "main":
+    role = st.session_state.get("role", "lite")
+    st.success(f"Welcome, {st.session_state.email} (Role: {role.upper()})")
+
+    if page == "Home":
+        show_home_page()
+    elif page == "Calculator":
+        show_calculator_page()
+    elif page == "Charts":
+        st.info("Charts module coming soon...")  # 可占位或引入 show_charts_page()
+    elif page == "Report":
+        st.info("Report module coming soon...")
+
 
 # -------------------------
 # Page: Login or Register
@@ -205,186 +379,21 @@ if st.session_state.page == "login":
                 st.error(f"Registration may have failed: {result}")
         st.button("Back to Login", on_click=lambda: st.session_state.update(auth_mode="login"))
         st.stop()
-st.title("SiderealLab Pro - Secure App")
-
-st.title("🌍 SiderealLab Pro – Secure App")
 
 # -------------------------
-# 1. 欢迎介绍
+# Logout and Footer
 # -------------------------
-st.markdown("""
-### 👋 Welcome to **SiderealLab**
-SiderealLab is a lightweight scientific tool that calculates the Earth's rotational speed at your latitude,  
-based on actual observation intervals. Whether you're an amateur astronomer, educator, or data enthusiast —  
-you're in the right place.
-""")
-
-# -------------------------
-# 2. 当前版本信息
-# -------------------------
-if "role" in st.session_state and st.session_state.role == "lite":
-    st.info("You're currently using the **Lite version**. Some features are locked. Upgrade to Pro for full access.")
-
-# -------------------------
-# 3. Free vs Pro 对比表
-# -------------------------
-with st.expander("🆚 Free vs Pro Comparison"):
-    st.markdown("""
-| Feature                          | Free Version | Pro Version |
-|----------------------------------|:------------:|:-----------:|
-| Local speed calculator           | ✅            | ✅           |
-| Annotated chart (your latitude)  | ✅            | ✅           |
-| Speed vs. Latitude plot          | ✅            | ✅           |
-| Earth cross-section diagram      | ❌            | ✅           |
-| Polar velocity distribution      | ❌            | ✅           |
-| Export PDF report                | ❌            | ✅           |
-| Export CSV data                  | ❌            | ✅           |
-| High-resolution chart download   | ❌            | ✅           |
-""")
-
-# -------------------------
-# 4. Pro 功能引导 + 升级按钮
-# -------------------------
-if "role" in st.session_state and st.session_state.role == "lite":
-    st.markdown("### 🚀 Unlock the Full Experience")
-    st.markdown("""
-Upgrade to **SiderealLab Pro** to access all scientific tools and export features:
-
-- Downloadable high-resolution charts (PNG, PDF)
-- Detailed Earth cross-section & polar velocity maps
-- Custom observation periods & comparative tools
-- Personalised data reports for scientific records
-- Premium feature access for educators & researchers
-""")
-    col1, col2 = st.columns([2, 1])
+if st.session_state.get("logged_in", False):
+    st.markdown("---")
+    col1, col2 = st.columns([1, 1])
     with col1:
-        st.markdown("**Ready to unlock the stars?**")
+        if st.button("🔓 Log Out"):
+            st.session_state.clear()
+            st.experimental_rerun()
     with col2:
-        st.button("💎 Upgrade to Pro", on_click=lambda: st.warning("Pro upgrade flow coming soon..."))
+        st.caption("Made with 🌎 by Elliott • [GitHub](https://github.com/yourname/sidereallab)")
 
-# -------------------------
-# 5. 为什么测地球自转速度
-# -------------------------
-with st.expander("🌏 Why Does Earth's Rotation Speed Matter?"):
-    st.markdown("""
-Every place on Earth is spinning — but not at the same speed.  
-Your latitude determines your velocity through space.
-
-- At the equator: ~1670 km/h  
-- In Sydney: ~1380 km/h  
-- In Reykjavík: ~800 km/h
-
-Understanding rotational speed helps in:
-- Satellite and telescope calibration
-- Astronomical observation planning
-- Scientific education and awareness
-
-This tool lets you visualize and calculate your local motion —  
-**You're not standing still. You're moving with the Earth.**
-""")
-
-# -------------------------
-# 6. 功能卡片式概览导航
-# -------------------------
-st.markdown("### 🧭 Features at a Glance")
-
-cols = st.columns(3)
-features = [
-    ("🌀", "Local Speed Calculation", "Instant speed based on latitude & time"),
-    ("📈", "Latitude Speed Chart", "Visualize how speed varies with latitude"),
-    ("📤", "PDF/CSV Export", "Download reports for research or class"),
-]
-for i, (icon, title, desc) in enumerate(features):
-    with cols[i]:
-        st.markdown(f"{icon} **{title}**  \n{desc}")
-
-# -------------------------
-# 7. 邮件订阅预留（未来接入 Mailchimp 或 Notion 表单）
-# -------------------------
-st.markdown("---")
-st.markdown("📬 Want to receive updates about SiderealLab Pro? Join our [mailing list](https://example.com)!")
-
-# -------------------------
-# Page: Main Functionality
-# -------------------------
-if st.session_state.page == "main":
-    role = st.session_state.role
-    st.success(f"Welcome, {st.session_state.email} (Role: {role.upper()})")
-
-    with st.form("input_form"):
-        target = st.text_input("Target Name", "Sirius")
-        lat = st.number_input("Latitude (°)", value=-33.86, step=0.01)
-        T1_str = st.text_input("Observation T1", "2025-05-01 22:00:00")
-        T2_str = st.text_input("Observation T2", "2025-05-02 22:00:00")
-        submitted = st.form_submit_button("Calculate")
-
-    if submitted:
-        try:
-            T1 = datetime.strptime(T1_str, "%Y-%m-%d %H:%M:%S")
-            T2 = datetime.strptime(T2_str, "%Y-%m-%d %H:%M:%S")
-            delta_sec = (T2 - T1).total_seconds()
-            delta_hr = delta_sec / 3600
-            if delta_hr <= 0:
-                st.error("T2 must be later than T1.")
-                st.stop()
-
-            radius = get_local_radius(lat)
-            omega = calculate_angular_velocity(delta_hr)
-            speed_kmh = calculate_linear_speed(radius, omega)
-            speed_ms = speed_kmh * 1000 / 3600
-
-            st.markdown("### 📊 Results")
-            st.write(f"**Local Radius:** {radius:.2f} km")
-            st.write(f"**Angular Velocity:** {omega:.6f} rad/hr")
-            st.write(f"**Speed:** {speed_kmh:.2f} km/h | {speed_ms:.2f} m/s")
-
-            data_dict = {
-                "Target": target,
-                "Latitude": lat,
-                "Local Radius (km)": radius,
-                "Expected Radius (km)": radius,
-                "Observation T1": T1_str,
-                "Observation T2": T2_str,
-                "Delta T (hrs)": delta_hr,
-                "Delta T (secs)": delta_sec,
-                "Angular Velocity (rad/hr)": omega,
-                "Speed (km/h)": speed_kmh,
-                "Speed (m/s)": speed_ms
-            }
-
-            generate_csv(data_dict)
-            download_csv()
-            generate_pdf_report(data_dict)
-            with open("sidereallab_report.pdf", "rb") as f:
-                st.download_button("Download PDF Report", f, "sidereallab_report.pdf", "application/pdf")
-
-            st.markdown("### 📈 Charts")
-            st.subheader("1. Speed vs Latitude")
-            st.pyplot(plot_speed_vs_latitude(omega, radius, user_lat=lat))
-
-            if role == "pro":
-                download_image("speed_vs_latitude.png", "Download Speed vs Latitude Image")
-
-            if role == "pro" and st.checkbox("2. Radius vs Latitude"):
-                st.pyplot(plot_radius_vs_latitude())
-                download_image("radius_vs_latitude.png", "Download Radius vs Latitude Image")
-
-            if role == "pro" and st.checkbox("3. Local vs Equator Speed"):
-                st.pyplot(plot_speed_comparison(omega, lat))
-                download_image("speed_comparison.png", "Download Speed Comparison Image")
-
-            if role == "pro" and st.checkbox("4. Earth Cross Section"):
-                st.pyplot(plot_earth_cross_section(lat, radius))
-                download_image("cross_section.png", "Download Earth Cross Section Image")
-
-            if role == "pro" and st.checkbox("5. Polar Velocity Distribution"):
-                st.pyplot(plot_polar_velocity_distribution(omega))
-                download_image("polar_velocity.png", "Download Polar Velocity Image")
-
-            if role == "lite":
-                st.info("Upgrade to Pro to unlock all chart downloads and advanced reports.")
-
-        except Exception as e:
-            st.error(f"Error: {e}")
+else:
+    st.info("Please log in above to access all features.")
 
 
