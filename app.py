@@ -15,10 +15,10 @@ def get_local_radius(latitude_deg):
     return 6371.0 * math.cos(math.radians(latitude_deg))
 
 def calculate_angular_velocity(delta_T_hours):
-    return 2 * math.pi / delta_T_hours
+    return 2 * math.pi / (delta_T_hours * 3600)
 
-def calculate_linear_speed(radius_km, angular_velocity, latitude_deg):
-    return radius_km * angular_velocity * math.cos(math.radians(latitude_deg))
+def calculate_linear_speed(radius_km, angular_velocity):
+    return radius_km * 1000 * angular_velocity
 
 # -------------------------
 # Chart Functions
