@@ -211,8 +211,8 @@ you're in the right place.
 | Speed vs. Latitude plot          | ✅            | ✅           |
 | Earth cross-section diagram      | ❌            | ✅           |
 | Polar velocity distribution      | ❌            | ✅           |
-| Export PDF report                | ❌            | ✅           |
-| Export CSV data                  | ❌            | ✅           |
+| Export PDF report                | ✅            | ✅           |
+| Export CSV data                  | ✅            | ✅           |
 | High-resolution chart download   | ❌            | ✅           |
 """)
 
