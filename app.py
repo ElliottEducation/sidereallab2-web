@@ -205,6 +205,104 @@ if st.session_state.page == "login":
                 st.error(f"Registration may have failed: {result}")
         st.button("Back to Login", on_click=lambda: st.session_state.update(auth_mode="login"))
         st.stop()
+st.title("SiderealLab Pro - Secure App")
+
+st.title("🌍 SiderealLab Pro – Secure App")
+
+# -------------------------
+# 1. 欢迎介绍
+# -------------------------
+st.markdown("""
+### 👋 Welcome to **SiderealLab**
+SiderealLab is a lightweight scientific tool that calculates the Earth's rotational speed at your latitude,  
+based on actual observation intervals. Whether you're an amateur astronomer, educator, or data enthusiast —  
+you're in the right place.
+""")
+
+# -------------------------
+# 2. 当前版本信息
+# -------------------------
+if "role" in st.session_state and st.session_state.role == "lite":
+    st.info("You're currently using the **Lite version**. Some features are locked. Upgrade to Pro for full access.")
+
+# -------------------------
+# 3. Free vs Pro 对比表
+# -------------------------
+with st.expander("🆚 Free vs Pro Comparison"):
+    st.markdown("""
+| Feature                          | Free Version | Pro Version |
+|----------------------------------|:------------:|:-----------:|
+| Local speed calculator           | ✅            | ✅           |
+| Annotated chart (your latitude)  | ✅            | ✅           |
+| Speed vs. Latitude plot          | ✅            | ✅           |
+| Earth cross-section diagram      | ❌            | ✅           |
+| Polar velocity distribution      | ❌            | ✅           |
+| Export PDF report                | ❌            | ✅           |
+| Export CSV data                  | ❌            | ✅           |
+| High-resolution chart download   | ❌            | ✅           |
+""")
+
+# -------------------------
+# 4. Pro 功能引导 + 升级按钮
+# -------------------------
+if "role" in st.session_state and st.session_state.role == "lite":
+    st.markdown("### 🚀 Unlock the Full Experience")
+    st.markdown("""
+Upgrade to **SiderealLab Pro** to access all scientific tools and export features:
+
+- Downloadable high-resolution charts (PNG, PDF)
+- Detailed Earth cross-section & polar velocity maps
+- Custom observation periods & comparative tools
+- Personalised data reports for scientific records
+- Premium feature access for educators & researchers
+""")
+    col1, col2 = st.columns([2, 1])
+    with col1:
+        st.markdown("**Ready to unlock the stars?**")
+    with col2:
+        st.button("💎 Upgrade to Pro", on_click=lambda: st.warning("Pro upgrade flow coming soon..."))
+
+# -------------------------
+# 5. 为什么测地球自转速度
+# -------------------------
+with st.expander("🌏 Why Does Earth's Rotation Speed Matter?"):
+    st.markdown("""
+Every place on Earth is spinning — but not at the same speed.  
+Your latitude determines your velocity through space.
+
+- At the equator: ~1670 km/h  
+- In Sydney: ~1380 km/h  
+- In Reykjavík: ~800 km/h
+
+Understanding rotational speed helps in:
+- Satellite and telescope calibration
+- Astronomical observation planning
+- Scientific education and awareness
+
+This tool lets you visualize and calculate your local motion —  
+**You're not standing still. You're moving with the Earth.**
+""")
+
+# -------------------------
+# 6. 功能卡片式概览导航
+# -------------------------
+st.markdown("### 🧭 Features at a Glance")
+
+cols = st.columns(3)
+features = [
+    ("🌀", "Local Speed Calculation", "Instant speed based on latitude & time"),
+    ("📈", "Latitude Speed Chart", "Visualize how speed varies with latitude"),
+    ("📤", "PDF/CSV Export", "Download reports for research or class"),
+]
+for i, (icon, title, desc) in enumerate(features):
+    with cols[i]:
+        st.markdown(f"{icon} **{title}**  \n{desc}")
+
+# -------------------------
+# 7. 邮件订阅预留（未来接入 Mailchimp 或 Notion 表单）
+# -------------------------
+st.markdown("---")
+st.markdown("📬 Want to receive updates about SiderealLab Pro? Join our [mailing list](https://example.com)!")
 
 # -------------------------
 # Page: Main Functionality
