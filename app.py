@@ -365,6 +365,11 @@ if st.session_state.page == "main":
 # Page: Login or Register
 # -------------------------
 if st.session_state.page == "login":
+   st.markdown("""
+# 🌍 **SiderealLab**
+#### _Discover how fast you're spinning on Earth_
+""")
+
     if st.session_state.auth_mode == "login":
         st.subheader("🔐 Login")
         email = st.text_input("Email")
