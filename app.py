@@ -36,7 +36,7 @@ def plot_speed_vs_latitude(omega, radius, user_lat=None):
         ax.plot(user_lat, user_speed, "ro")
         ax.annotate(f"{user_speed:.2f} km/h",
                     xy=(user_lat, user_speed),
-                    xytext=(user_lat + 3, user_speed + 10),
+                    xytext=(user_lat + 2, user_speed + 0.02),
                     arrowprops=dict(arrowstyle="->", color="gray"),
                     fontsize=10)
 
