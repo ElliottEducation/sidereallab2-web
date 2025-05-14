@@ -23,18 +23,32 @@ def calculate_linear_speed(radius_km, angular_velocity):
 # -------------------------
 # Chart Functions
 # -------------------------
-def plot_speed_vs_latitude(omega, radius):
+def plot_speed_vs_latitude(omega, radius, user_lat=None):
     latitudes = np.linspace(-90, 90, 181)
     speeds = radius * omega * np.cos(np.radians(latitudes))
+
     fig, ax = plt.subplots()
-    ax.plot(latitudes, speeds)
+    ax.plot(latitudes, speeds, label="Speed vs Latitude", color="blue")
+
+    if user_lat is not None:
+        user_speed = radius * omega * math.cos(math.radians(user_lat))
+        ax.axvline(user_lat, color="red", linestyle="--", label=f"Your Latitude: {user_lat:.2f}°")
+        ax.plot(user_lat, user_speed, "ro")
+        ax.annotate(f"{user_speed:.2f} km/h",
+                    xy=(user_lat, user_speed),
+                    xytext=(user_lat + 3, user_speed + 10),
+                    arrowprops=dict(arrowstyle="->", color="gray"),
+                    fontsize=10)
+
     ax.set_xlabel("Latitude (°)")
     ax.set_ylabel("Speed (km/h)")
     ax.set_title("Speed vs Latitude")
     ax.grid(True)
+    ax.legend()
     fig.tight_layout()
     fig.savefig("speed_vs_latitude.png")
     return fig
+
 
 def plot_radius_vs_latitude():
     latitudes = np.linspace(-90, 90, 181)
@@ -248,7 +262,8 @@ if st.session_state.page == "main":
 
             st.markdown("### 📈 Charts")
             st.subheader("1. Speed vs Latitude")
-            st.pyplot(plot_speed_vs_latitude(omega, radius))
+            st.pyplot(plot_speed_vs_latitude(omega, radius, user_lat=lat))
+
             if role == "pro":
                 download_image("speed_vs_latitude.png", "Download Speed vs Latitude Image")
 
