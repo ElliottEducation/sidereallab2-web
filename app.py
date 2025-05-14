@@ -16,6 +16,25 @@ from supabase_auth import sign_in, sign_up, get_user_role, add_user_role
 # -------------------------
 st.set_page_config(page_title="SiderealLab Pro", layout="centered")
 
+# -------------------------
+# Initialize Session State Defaults
+# -------------------------
+if "page" not in st.session_state:
+    st.session_state.page = "login"
+
+if "auth_mode" not in st.session_state:
+    st.session_state.auth_mode = "login"
+
+if "logged_in" not in st.session_state:
+    st.session_state.logged_in = False
+
+if "email" not in st.session_state:
+    st.session_state.email = None
+
+if "role" not in st.session_state:
+    st.session_state.role = "lite"
+
+
 # 页面导航菜单（只在已登录后可见）
 if st.session_state.get("logged_in", False):
     page = st.selectbox("📂 Navigate to", ["Home", "Calculator", "Charts", "Report"])
