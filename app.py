@@ -232,7 +232,7 @@ if st.session_state.page == "main":
 
             radius = get_local_radius(lat)
             omega = calculate_angular_velocity(delta_hr)
-            speed_kmh = calculate_linear_speed(radius, omega, lat)
+            speed_kmh = calculate_linear_speed(radius, omega)
             speed_ms = speed_kmh * 1000 / 3600
 
             st.markdown("### 📊 Results")
