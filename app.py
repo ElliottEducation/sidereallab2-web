@@ -77,10 +77,22 @@ if not st.session_state.logged_in:
 
 # 登录后获取用户权限
 if st.session_state.logged_in:
-    user = supabase.auth.get_user()["user"]
-    role = user.get("user_metadata", {}).get("role", "basic") if user else "basic"
+    try:
+        user_response = supabase.auth.get_user()
+        user = user_response.user  # ✅ 使用属性 .user 而不是 ["user"]
+
+        if user and user.user_metadata:
+            role = user.user_metadata.get("role", "basic")
+        else:
+            role = "basic"
+
+    except Exception as e:
+        st.error(f"Error retrieving user: {e}")
+        role = "basic"
+
     st.session_state.role = role
     st.session_state.is_pro = (role == "pro")
+
 
 
 # 未登录禁止访问任何功能
