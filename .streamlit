@@ -1,9 +1,0 @@
-[theme]
-base = "light"  # 可选: "light" 或 "dark"
-
-[server]
-enableCORS = false
-
-[browser]
-gatherUsageStats = false
-showGithubButton = false
