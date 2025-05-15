@@ -109,6 +109,36 @@ def plot_radius_vs_latitude():
     return fig
 
 # -------------------------
+# PDF & CSV Export Functions (Pro only)
+# -------------------------
+def generate_pdf_report(latitude, delta_T, speed):
+    file_path = "sidereal_report.pdf"
+    c = canvas.Canvas(file_path, pagesize=A4)
+    width, height = A4
+
+    c.setFont("Helvetica-Bold", 18)
+    c.drawString(50, height - 50, "SiderealLab Report")
+
+    c.setFont("Helvetica", 12)
+    c.drawString(50, height - 100, f"Latitude: {latitude}°")
+    c.drawString(50, height - 120, f"Rotation Period T: {delta_T} hours")
+    c.drawString(50, height - 140, f"Calculated Speed: {speed:.2f} m/s")
+
+    c.drawString(50, height - 180, "This report was generated using SiderealLab Pro.")
+    c.save()
+    return file_path
+
+def generate_csv_data(latitude, delta_T, speed):
+    df = pd.DataFrame({
+        "Latitude": [latitude],
+        "Rotation_Period_T": [delta_T],
+        "Linear_Speed_mps": [speed]
+    })
+    file_path = "sidereal_data.csv"
+    df.to_csv(file_path, index=False)
+    return file_path
+
+# -------------------------
 # Page: Home
 # -------------------------
 if page == "Home":
@@ -172,44 +202,6 @@ elif page == "Report":
     if not st.session_state.is_pro:
         st.error("This page is only available for Pro users.")
     else:
-        st.success("Here you can generate and export PDF / CSV reports.")
-        # TODO: You may insert your existing export logic here
-        st.button("Export PDF (Coming Soon)", disabled=True)
-        st.button("Download CSV (Coming Soon)", disabled=True)
-
-def generate_pdf_report(latitude, delta_T, speed):
-    file_path = "sidereal_report.pdf"
-    c = canvas.Canvas(file_path, pagesize=A4)
-    width, height = A4
-
-    c.setFont("Helvetica-Bold", 18)
-    c.drawString(50, height - 50, "SiderealLab Report")
-
-    c.setFont("Helvetica", 12)
-    c.drawString(50, height - 100, f"Latitude: {latitude}°")
-    c.drawString(50, height - 120, f"Rotation Period T: {delta_T} hours")
-    c.drawString(50, height - 140, f"Calculated Speed: {speed:.2f} m/s")
-
-    c.drawString(50, height - 180, "This report was generated using SiderealLab Pro.")
-    c.save()
-    return file_path
-
-def generate_csv_data(latitude, delta_T, speed):
-    df = pd.DataFrame({
-        "Latitude": [latitude],
-        "Rotation_Period_T": [delta_T],
-        "Linear_Speed_mps": [speed]
-    })
-    file_path = "sidereal_data.csv"
-    df.to_csv(file_path, index=False)
-    return file_path
-
-elif page == "Report":
-    st.header("Generate Report")
-
-    if not st.session_state.is_pro:
-        st.error("This page is only available for Pro users.")
-    else:
         latitude = st.number_input("Latitude (°)", min_value=-90.0, max_value=90.0, value=0.0)
         delta_T = st.number_input("Rotation Period T (hours)", min_value=20.0, max_value=30.0, value=24.0)
 
@@ -219,12 +211,17 @@ elif page == "Report":
 
         st.success(f"Speed = {speed:.2f} m/s at latitude {latitude:.2f}°")
 
-        if st.button("Generate PDF"):
-            pdf_path = generate_pdf_report(latitude, delta_T, speed)
-            with open(pdf_path, "rb") as f:
-                st.download_button("Download PDF", f, file_name="sidereal_report.pdf")
+        col1, col2 = st.columns(2)
+        with col1:
+            if st.button("Generate PDF"):
+                pdf_path = generate_pdf_report(latitude, delta_T, speed)
+                with open(pdf_path, "rb") as f:
+                    st.download_button("Download PDF", f, file_name="sidereal_report.pdf")
 
-        if st.button("Generate CSV"):
-            csv_path = generate_csv_data(latitude, delta_T, speed)
-            with open(csv_path, "rb") as f:
-                st.download_button("Download CSV", f, file_name="sidereal_data.csv")
+        with col2:
+            if st.button("Generate CSV"):
+                csv_path = generate_csv_data(latitude, delta_T, speed)
+                with open(csv_path, "rb") as f:
+                    st.download_button("Download CSV", f, file_name="sidereal_data.csv")
+
+
