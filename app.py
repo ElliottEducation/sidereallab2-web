@@ -32,6 +32,40 @@ if "role" not in st.session_state:
 if "is_pro" not in st.session_state:
     st.session_state.is_pro = False
 
+# -------------------------
+# Login / Sign-up Interface
+# -------------------------
+if not st.session_state.logged_in:
+    st.title("SiderealLab Login")
+
+    st.markdown("Please log in or sign up to continue.")
+
+    with st.form("auth_form"):
+        email = st.text_input("Email")
+        password = st.text_input("Password", type="password")
+        auth_mode = st.radio("Action", ["Login", "Sign up"])
+        submitted = st.form_submit_button("Submit")
+
+        if submitted:
+            if auth_mode == "Login":
+                result = sign_in(email, password)
+                if result:
+                    st.session_state.logged_in = True
+                    st.session_state.email = email
+                    st.rerun()
+                else:
+                    st.error("Login failed. Please check credentials.")
+            else:
+                result = sign_up(email, password)
+                if result:
+                    add_user_role(email, "basic")  # 默认注册为 basic 用户
+                    st.success("Sign-up successful! Please login now.")
+                else:
+                    st.error("Sign-up failed. Email may already be registered.")
+
+    st.stop()
+
+
 # 登录后获取用户权限
 if st.session_state.logged_in:
     user = supabase.auth.get_user()
