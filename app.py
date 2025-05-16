@@ -3,7 +3,7 @@
 # -------------------------
 import math
 import streamlit as st
-from datetime import datetime, timedelta
+from datetime import datetime
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -241,10 +241,14 @@ elif page == "Calculator":
     col3, col4 = st.columns(2)
     with col3:
         date1 = st.date_input("Observation Time 1 – Date")
-        time1 = st.time_input("Observation Time 1 – Time", step=timedelta(seconds=1))
+        time1 = st.time_input("Observation Time 1 – Time", value=datetime.now().time())
     with col4:
         date2 = st.date_input("Observation Time 2 – Date")
-        time2 = st.time_input("Observation Time 2 – Time", step=timedelta(seconds=1))
+        time2 = st.time_input("Observation Time 2 – Time", value=datetime.now().time())
+
+
+
+
 
     
     # 组合成 datetime 对象
