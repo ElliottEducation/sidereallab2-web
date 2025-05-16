@@ -241,10 +241,10 @@ elif page == "Calculator":
     col3, col4 = st.columns(2)
     with col3:
         date1 = st.date_input("Observation Time 1 – Date")
-        time1 = st.time_input("Observation Time 1 – Time")
+        time1 = st.time_input("Observation Time 1 – Time", step=1)
     with col4:
         date2 = st.date_input("Observation Time 2 – Date")
-        time2 = st.time_input("Observation Time 2 – Time")
+        time2 = st.time_input("Observation Time 2 – Time", step=1)
 
     # 组合成 datetime 对象
     dt1 = datetime.combine(date1, time1)
