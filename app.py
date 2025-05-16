@@ -238,27 +238,33 @@ elif page == "Calculator":
     # 日期时间输入
     st.subheader("Optional: Calculate ΔT between two observations")
 
-    col3, col4 = st.columns(2)
-    with col3:
-        date1 = st.date_input("Observation Time 1 – Date")
-        time1 = st.time_input("Observation Time 1 – Time", value=datetime.now().time())
-    with col4:
-        date2 = st.date_input("Observation Time 2 – Date")
-        time2 = st.time_input("Observation Time 2 – Time", value=datetime.now().time())
+ # 日期输入（保持 date_input）
+col3, col4 = st.columns(2)
+with col3:
+    date1 = st.date_input("Observation Time 1 – Date")
+with col4:
+    date2 = st.date_input("Observation Time 2 – Date")
 
+# 文本输入替代 time_input，实现秒级自由输入
+col5, col6 = st.columns(2)
+with col5:
+    time_str1 = st.text_input("Observation Time 1 – Time (HH:MM:SS)", "02:00:00")
+with col6:
+    time_str2 = st.text_input("Observation Time 2 – Time (HH:MM:SS)", "03:00:00")
 
-
-
-
-    
-    # 组合成 datetime 对象
+# 尝试解析时间字符串
+try:
+    time1 = datetime.strptime(time_str1, "%H:%M:%S").time()
+    time2 = datetime.strptime(time_str2, "%H:%M:%S").time()
     dt1 = datetime.combine(date1, time1)
     dt2 = datetime.combine(date2, time2)
-
-    # 自动计算 ΔT 秒数（避免负值）
     delta_seconds = abs((dt2 - dt1).total_seconds())
 
     st.success(f"ΔT between observations: {delta_seconds:.2f} seconds")
+except ValueError:
+    st.error("Invalid time format. Please enter time as HH:MM:SS (e.g. 14:23:45)")
+    delta_seconds = None
+
 
     # 补充说明文字
     with st.expander("What is ΔT?"):
