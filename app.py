@@ -217,58 +217,52 @@ if page == "Home":
 elif page == "Calculator":
     st.header("Earth Rotation Speed Calculator")
 
-    # 两列输入：纬度 与 自转周期
+    # 输入区域
     col1, col2 = st.columns(2)
     with col1:
         latitude_deg = st.number_input("Latitude (°)", min_value=-90.0, max_value=90.0, value=0.0)
     with col2:
         delta_T_hours = st.number_input("Rotation Period T (hours)", min_value=20.0, max_value=30.0, value=24.0)
 
-    # 半径与角速度计算
+    # 计算
     radius_km = get_local_radius(latitude_deg)
     omega = calculate_angular_velocity(delta_T_hours)
     speed_mps = calculate_linear_speed(radius_km, omega)
 
-    # 输出线速度
+    # 输出
     st.success(f"Linear speed at {latitude_deg:.2f}°: {speed_mps:.2f} m/s")
-
-    # 输出 local radius
     st.info(f"Local Earth Radius at {latitude_deg:.2f}°: {radius_km:.2f} km")
 
-    # 日期时间输入
+    # ΔT 时间差计算部分
     st.subheader("Optional: Calculate ΔT between two observations")
 
- # 日期输入（保持 date_input）
-col3, col4 = st.columns(2)
-with col3:
-    date1 = st.date_input("Observation Time 1 – Date")
-with col4:
-    date2 = st.date_input("Observation Time 2 – Date")
+    col3, col4 = st.columns(2)
+    with col3:
+        date1 = st.date_input("Observation Time 1 – Date")
+    with col4:
+        date2 = st.date_input("Observation Time 2 – Date")
 
-# 文本输入替代 time_input，实现秒级自由输入
-col5, col6 = st.columns(2)
-with col5:
-    time_str1 = st.text_input("Observation Time 1 – Time (HH:MM:SS)", "02:00:00")
-with col6:
-    time_str2 = st.text_input("Observation Time 2 – Time (HH:MM:SS)", "03:00:00")
+    col5, col6 = st.columns(2)
+    with col5:
+        time_str1 = st.text_input("Observation Time 1 – Time (HH:MM:SS)", "02:00:00")
+    with col6:
+        time_str2 = st.text_input("Observation Time 2 – Time (HH:MM:SS)", "03:00:00")
 
-# 尝试解析时间字符串
-try:
-    time1 = datetime.strptime(time_str1, "%H:%M:%S").time()
-    time2 = datetime.strptime(time_str2, "%H:%M:%S").time()
-    dt1 = datetime.combine(date1, time1)
-    dt2 = datetime.combine(date2, time2)
-    delta_seconds = abs((dt2 - dt1).total_seconds())
+    try:
+        time1 = datetime.strptime(time_str1, "%H:%M:%S").time()
+        time2 = datetime.strptime(time_str2, "%H:%M:%S").time()
+        dt1 = datetime.combine(date1, time1)
+        dt2 = datetime.combine(date2, time2)
+        delta_seconds = abs((dt2 - dt1).total_seconds())
+        st.success(f"ΔT between observations: {delta_seconds:.2f} seconds")
+    except ValueError:
+        st.error("Invalid time format. Please enter time as HH:MM:SS (e.g. 14:23:45)")
+        delta_seconds = None
 
-    st.success(f"ΔT between observations: {delta_seconds:.2f} seconds")
-except ValueError:
-    st.error("Invalid time format. Please enter time as HH:MM:SS (e.g. 14:23:45)")
-    delta_seconds = None
+    with st.expander("What is ΔT?"):
+        st.markdown("ΔT is the time difference (in seconds) between two observations. "
+                    "You can use it to estimate a more realistic rotation period `T` for local velocity calculations.")
 
-# ✅ 放在 try-except 后面
-with st.expander("What is ΔT?"):
-    st.markdown("ΔT is the time difference (in seconds) between two observations. "
-                "You can use it to estimate a more realistic rotation period `T` for local velocity calculations.")
 
 
 
