@@ -265,11 +265,11 @@ except ValueError:
     st.error("Invalid time format. Please enter time as HH:MM:SS (e.g. 14:23:45)")
     delta_seconds = None
 
+# ✅ 放在 try-except 后面
+with st.expander("What is ΔT?"):
+    st.markdown("ΔT is the time difference (in seconds) between two observations. "
+                "You can use it to estimate a more realistic rotation period `T` for local velocity calculations.")
 
-    # 补充说明文字
-    with st.expander("What is ΔT?"):
-        st.markdown("ΔT is the time difference (in seconds) between two observations. "
-                    "You can use it to estimate a more realistic rotation period `T` for local velocity calculations.")
 
 
 # -------------------------
